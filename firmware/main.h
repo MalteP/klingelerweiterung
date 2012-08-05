@@ -3,8 +3,8 @@
 // #############################################################################
 // # main.h - Main (Header)                                                    #
 // #############################################################################
-// #              Version: 1.0 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2011 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 2012 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -24,7 +24,16 @@
  #define MAIN_H
  
  #include <avr/io.h>
+
+ #define BELL_HX 0
+ #define BELL_IT 1
  
- uint8_t int_to_soundcode( uint8_t x );
+ #define PT_SWITCH_ON 0x01
+ #define PT_SWITCH_OFF 0x02
+
+ void led_mode_out( void );
+ uint8_t int_to_hx_soundcode( uint8_t x );
+ uint8_t int_to_pt_housecode( uint8_t x );
+ uint8_t int_to_pt_code( uint8_t x );
 
 #endif
