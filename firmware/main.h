@@ -3,8 +3,8 @@
 // #############################################################################
 // # main.h - Main (Header)                                                    #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2012 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// # (c) '12-'13 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -35,5 +35,6 @@
  uint8_t int_to_hx_soundcode( uint8_t x );
  uint8_t int_to_pt_housecode( uint8_t x );
  uint8_t int_to_pt_code( uint8_t x );
+ void trigger_bell( void );
 
 #endif

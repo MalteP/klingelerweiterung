@@ -12,8 +12,7 @@ F_CPU = 8000000
 FORMAT = ihex
 TARGET = main
 
-SRC = $(TARGET).c
-SRC += wireless.c
+SRC = wireless.c $(TARGET).c
 
 
 ASRC = 
@@ -89,7 +88,11 @@ AVRDUDE_PORT = usb
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
-AVRDUDE_WRITE_FUSE = -U lfuse:w:0xe2:m -U hfuse:w:0xdc:m -U efuse:w:0x01:m
+
+AVRDUDE_WRITE_FUSE48 = -U lfuse:w:0xe2:m -U hfuse:w:0xdc:m -U efuse:w:0x01:m
+AVRDUDE_WRITE_FUSE8 = -U lfuse:w:0x24:m -U hfuse:w:0xd9:m
+
+
 
 # Uncomment the following if you want avrdude's erase cycle counter.
 # Note that this counter needs to be initialized first using -Yn,
@@ -140,13 +143,28 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss 
 sym: $(TARGET).sym
 
-# Program the device.  
-program: $(TARGET).hex $(TARGET).eep
+# Flash and write fuses  
+program: flash fuse
+
+# Program the device 
+flash: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 
 # Program fusebits
 fuse:
-	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE)
+      ifeq ($(MCU), atmega48)
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE48)
+      else
+        ifeq ($(MCU), atmega88)
+	  $(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE48)
+        else
+          ifeq ($(MCU), atmega8)
+	    $(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE8)
+          else
+            $(error ERROR: Fusebit settings for MCU $(MCU) not defined in makefile.)
+          endif          
+        endif
+      endif
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \

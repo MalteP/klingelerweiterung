@@ -3,8 +3,8 @@
 // #############################################################################
 // # wireless.c - Wireless functions                                           #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2012 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// # (c) '12-'13 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -46,8 +46,15 @@
    mode=MODE_PT;
    n_times = N_TIMES_DEFAULT;
 
-   TCCR0B = (1<<CS00) | (1<<CS01);               // Setup prescaler (8MHz / 64)
+   #if defined (__AVR_ATmega48__) || defined(__AVR_ATmega88__)
+   TCCR0B  = (1<<CS00) | (1<<CS01);              // Setup prescaler (8MHz / 64)
    TIMSK0 |= (1<<TOIE0);                         // Setup interrupt   
+   #elif defined (__AVR_ATmega8__)
+   TCCR0   = (1<<CS00) | (1<<CS01);              // Setup prescaler (8MHz / 64)
+   TIMSK  |= (1<<TOIE0);                         // Setup interrupt 
+   #else
+   #warning "MCU not supported"
+   #endif 
     
    // Remember to call sei() after initialization!
   }

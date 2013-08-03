@@ -3,8 +3,8 @@
 // #############################################################################
 // # main.c - Main                                                             #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2012 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// # (c) '12-'13 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -32,6 +32,9 @@
  volatile uint8_t global_mode;
  uint8_t eeGlobal_Mode EEMEM = BELL_HX;
 
+ // Used to store trigger pin level at startup
+ volatile uint8_t global_tpowerup;
+
  // HX
  volatile uint8_t hx_code;
  volatile uint8_t hx_sound;
@@ -57,6 +60,10 @@
    // Configure ports      
    LED_PORT_DDR |= (1<<LED_BIT);
 
+   // Check for trigger at power up
+   // Immediate start sending without eeprom writes or blink codes
+   global_tpowerup = ((TRIGGER_PIN & (1<<TRIGGER_BIT))?0:1);
+
    // Load EEP values
    global_mode = eeprom_read_byte(&eeGlobal_Mode);
    hx_code = eeprom_read_byte(&eeHX_Code);
@@ -67,34 +74,47 @@
    if(global_mode!=BELL_HX&&global_mode!=BELL_IT)
     {
      global_mode = BELL_HX;
-     eeprom_write_byte(&eeGlobal_Mode, global_mode);
+     if(global_tpowerup==0) eeprom_write_byte(&eeGlobal_Mode, global_mode);
     }
 
    // HX Sound out of range?
    if(hx_sound>7)
     {
      hx_sound = 0;
-     eeprom_write_byte(&eeHX_Sound, hx_sound);
+     if(global_tpowerup==0) eeprom_write_byte(&eeHX_Sound, hx_sound);
     }
 
    // IT code out of range?
    if(it_code>15)
     {
      it_code = 0;
-     eeprom_write_byte(&eeIT_Code, it_code);
+     if(global_tpowerup==0) eeprom_write_byte(&eeIT_Code, it_code);
     }
-
-   // Show mode
-   led_mode_out();
 
    // Configure INT0
    TRIGGER_PORT_DDR &= ~(1<<TRIGGER_BIT);
+   #if defined (__AVR_ATmega48__) || defined(__AVR_ATmega88__)
    EICRA            |=  (1<<ISC00);
    EIMSK            |=  (1<<INT0);
+   #elif defined (__AVR_ATmega8__)
+   MCUCR            |= (1<<ISC00);
+   GICR             |= (1<<INT0);
+   #else
+   #warning "MCU not supported"
+   #endif 
   
    // Enable interrupts
    sei();
  
+   // Show mode or send code without delay if input /HI at startup
+   if(global_tpowerup==0)
+    {
+     led_mode_out();
+    } else {
+     trigger_bell(); 
+    }
+
+
    // Main loop
    while(1)
     {
@@ -173,8 +193,11 @@
       }     
      
      // Status LED
-     if(wireless_status()) LED_PORT_OUTPUT &= ~(1<<LED_BIT);
-      else LED_PORT_OUTPUT |= (1<<LED_BIT);
+     if(wireless_status())
+      {
+       LED_PORT_OUTPUT ^= (1<<LED_BIT);
+       _delay_ms(25);
+      } else LED_PORT_OUTPUT |= (1<<LED_BIT);
       
       _delay_ms(25);
     }  
@@ -247,8 +270,8 @@
   }
 
 
- // ###### INT0: trigger ######  
- ISR( INT0_vect )
+ // ###### Trigger Bell ######
+ void trigger_bell( void )
   {
    if(!wireless_status()) 
     {
@@ -260,4 +283,11 @@
        wireless_switch_4(int_to_pt_housecode(it_code), int_to_pt_code(it_code), PT_SWITCH_ON);
       }
     }
+  }
+
+
+ // ###### INT0: trigger ######  
+ ISR( INT0_vect )
+  {
+   trigger_bell();
   }
